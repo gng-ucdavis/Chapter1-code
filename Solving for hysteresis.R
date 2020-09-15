@@ -1,18 +1,21 @@
+# install.packages('rootSolve')
 library('rootSolve')
 
+##In general, to conduct a stability analysis, you are looking at two things, are the solutions you find when you run the model stable (i.e. the system converges to that point) and are there alternative stable states (i.e. are there other solutions to your equations that are also stable but you missed them. The reason for this would be the changes in your starting population values)
+##To conduct a stability analysis, you need to first create a Jacobian matrix of your model. (This involves finding the partial derivative of your model equations with respect to the three populations)
+		##Next, input the numbers of your model into the Jacobian matrix. Some of the numbers in your model are parameters so those are constant, others 				require the population size of your different populations when a certain population is (at 0, not changing???)
+		###Then find the eigenvalues of your Jacobian matrix and see if it is positive, negative or 0
 ##Annotating the crap out of this.
-#This here is to set your parameters for m,n, and f
+#This here is to set your parameters for m and n
 low=1
 high=2
-magnitude=low
-m.domain=c(0.5,5)
+m.domain=c(0.2,2)
 n.domain=c(0.002, 25)
-f.domain=c(0.1,10)
 
 #Pick the right s.domain that corresponds to n level
 par(mfrow=c(2,2))
-# s.domain=seq(from =0, to =0.3, by =0.001) #high
-s.domain=seq(from =0, to =2000, by =1) #low
+s.domain=seq(from =0, to =0.3, by =0.001) #n=high, pred more sensitive
+# s.domain=seq(from =0, to =2000, by =1) #n=low, prey more sensitive
 H.star=matrix(nrow=length(s.domain), ncol=4) #creating a blank matrix to fill in root solutions (assuming that you don't get more than 4 equil values)
 
 ####Actual parameter values
@@ -21,23 +24,25 @@ for(j in 1: length(s.domain))  #we are going to run this over the range of ss va
 #Parameters
 a=2.17
 b=0.1
-n=n.domain[low]#0.002#25 #we've done low, high and high high, low low, [High,low has true alternative equilibrium values! Those turn out to be unstable but the P=0 is stable. Time to try high fear]
-m=m.domain[low]#0.5 #5
-f=f.domain[high] ##Writing down the results of high fear here. High low also has true alternative equil values and P=0 is stable. # High high has no ass# low high has none either, nor low low. Completed stability analysis
+n=n.domain[high] #Low, low is good, low high is good, high low is good, high high
+m=m.domain[high]
+f=1 ##Writing down the results of high fear here.
 s=s.domain[j]
 dh=0.056
 dp=0.01
 
-PforH.equil=function(P) #A function to find at what P level will the population rate of H be 0. The math for this equation is in iPad. Solve everything in terms of P.
+###9/17/19 I may be wrong here but I think the PforH.equil and subsequent functions is to find the equilibirum values of the three populations for a given level of sensory stress. But Gabriel, you say, isn't that the point of the ODE? Yes but this allows me to find non-stable equilibria points and ASS
+PforH.equil=function(P) #A function to find at what P level will the population growth rate of H be 0. The math for this equation is in iPad. Solve everything in terms of P. 9/17/19: What this function does is to spit out the dH/dt for a given value of P. Want to find the P that leads to no change in H
 {
-	H.equil=a*((-a*((dp*(n*s + 1) * (f*m*P + s + 1))/(b*(s+1)))*(s + 1) + f*P + s + 1)/(f*P+s+1))*((dp*(n*s + 1) * (f*m*P + s + 1))/(b* (s + 1)))/(1+(f*P)/(1+s))-b*((dp*(n*s + 1) * (f*m*P + s + 1))/(b* (s + 1)))*P/((1+(f*m*P)/(1+s))*(1+n*s))-dh*((dp*(n*s + 1) * (f*m*P + s + 1))/(b* (s + 1)))
+	H.equil=a*((-a*((dp*(n*s + 1) * (f*P + s + 1))/(b*(s+1)))*(s + 1) + f*m*P + s + 1)/(f*m*P+s+1))*((dp*(n*s + 1) * (f*P + s + 1))/(b* (s + 1)))/(1+(f*m*P)/(1+s))-b*((dp*(n*s + 1) * (f*P + s + 1))/(b* (s + 1)))*P/((1+(f*P)/(1+s))*(1+n*s))-dh*((dp*(n*s + 1) * (f*P + s + 1))/(b* (s + 1))) #Modified with switched m (9/17/19)
 	return(H.equil)
 }
-P.test=seq(-200,200, by =10) ##This parameter here is just for plotting purposes
+P.test=seq(-200,200, by =10) ##This parameter here is just for plotting purposes so it's okay that P.test is not high resolution. 
 H.equil=PforH.equil(P.test) #We take P.test and run it through the function to see what kind of dh/dt values we get. Obvi, want the ones that goes through 0
-plot(H.equil~P.test, main=c(paste(paste('s=',s), paste(','), paste('i =',i), paste(','), paste('f=',f)))) #Plotting the analysis
-sol=uniroot.all(PforH.equil, c(-20,30)) #This is the important function. Uniroot.all looks for multiple roots over the range of -20 to 30. This range is the one you will have to tweak if you aren't getting solutions. Numeric(0) means you get nothing; not 0 is a solution
-H.star[j,1:length(sol)]=sol #Filling in the matrix with the solutions
+plot(H.equil~P.test, main=c(paste(paste('s=',s), paste(','), paste(','), paste('f=',f)))) #Plotting the analysis
+sol=uniroot.all(PforH.equil, c(0,30)) #This is the important function. Uniroot.all looks for multiple roots over the range of -20 to 30. This range is the one you will have to tweak if you aren't getting solutions. Numeric(0) means you get nothing; not 0 is a solution. 9/17/19: For a given sensory stress value, you are hoping that you only get one solution of P where dH/dt is 0, which means there is only one solution. Dumb statement but why not bound P values to be >0? I think I will do that
+# sol=max(uniroot.all(PforH.equil, c(0,30))) Only run this code for when both m and n are high. You actually find multiple solutions at certain sensory stress levels but they are unstable equilibirum
+H.star[j,1:length(sol)]=sol #Filling in the matrix with the solutions. #9/17/19: Since we are doing this for many sensory stress levels, let's fill it up
 }
 
 H.star=cbind(s.domain,H.star) #Adding a row for sensory stress
@@ -51,7 +56,7 @@ head(H.starr)
 H.starr.final=matrix(nrow=length(s.domain), ncol=5) ##Create new matrix of blanks
 for(i in 1: nrow(H.starr))
 {
-	H.starr.temp=H.starr[i,][H.starr[i,]>=0] ###This is a cool bit of code that filters out all negative values from H.starr for a particular row. The syntas is weird af
+	H.starr.temp=H.starr[i,][H.starr[i,]>=0] ###This is a cool bit of code that filters out all negative values from H.starr for a particular row. The syntax is weird af 9/17/19: This will automatically filter out the sensory stress values where the predator population collapses and we don't have a non-zero solution
 	H.starr.final[i,1:length(H.starr.temp)]=H.starr.temp #Take the row of non negative values and add it to H.starr.final
 }
 H.starr.final=as.data.frame(H.starr.final)
@@ -65,8 +70,7 @@ H.starr.final=H.starr.final[complete.cases(H.starr.final$V2),] #What we have her
 
 
 ##Solving for prey quilibrium value using predator equation
-# 0=b*H*P/((1+(f*m*P)/(1+s))*(1+n*s))-d*P
-##Now that we have the P values at equilibiru, let's solve for H
+##Now that we have the P values at equilibirum, let's solve for the corresponding H when dP/dt = 0
 
 #Create blank matrix
 P.star=matrix(nrow=length(s.domain), ncol=4)
@@ -75,18 +79,16 @@ par(mfrow=c(2,2))
 for(j in 1: nrow(H.starr.final))
 {
 	s=H.starr.final$V1[j] #Call up relevant sensory stress values in H.starr.finals
-	# s=H.starr.final$s.domain[j]
 	P=H.starr.final$V2[j] #Call up relevant P.equil values
 HforP.equil=function(H) #Here's the function to solve for H.equil when P population isn't changing
 {
-	# P.equil=b*H*P/((1+(f*m*P)/(1+s))*(1+n*s))-dp*P
-	P.equil=b*H/((1+(f*m*P)/(1+s))*(1+n*s))-dp
+	P.equil=b*H/((1+(f*P)/(1+s))*(1+n*s))-dp #Modified for switched m (9/17/19)
 	return(P.equil)
 }
 H.test=seq(-200,200, by =1) #For plotting purposes
 P.equil=HforP.equil(H.test)
-plot(P.equil~H.test, main=c(paste(paste('s=',s), paste(','), paste('i =',i), paste(','), paste('f=',f))))
-sol=uniroot.all(HforP.equil, c(-20,200)) #Again, you might need to change the range
+plot(P.equil~H.test, main=c(paste(paste('s=',s), paste(','), paste(','), paste('f=',f))))
+sol=uniroot.all(HforP.equil, c(0,200)) #Again, you might need to change the range
 P.star[j,1:length(sol)]=sol #Filling out the matrix
 }
 
@@ -100,9 +102,7 @@ final$P=H.starr.final$V2 #For p.equil
 final$H=P.star.final$V1 #For h.equil
 final=as.data.frame(final)
 
-
-###So now that I have P and H that causes P and H to be in equil, I need to know what the B is.
-
+###So now that I have P and H that causes P and H to be in equil, I need to know what the B is when dB/dt =0
 B.star=matrix(nrow=length(s.domain), ncol=4)
 
 par(mfrow=c(2,2))
@@ -113,7 +113,7 @@ for(j in 1: nrow(final))
 	H=final$H[j]
 BforB.equil=function(B)
 {
-	B.equil=B*(1-B)-a*B*H/(1+(f*P)/(1+s))	 #Function to solve B given H and P. Note that with the way this is set up, B = 0 is always a solution and should be ignored.
+	B.equil=B*(1-B)-a*B*H/(1+(f*m*P)/(1+s))	 #Function to solve B given H and P. Note that with the way this is set up, B = 0 is always a solution and should be ignored. Equation modified for fixed m (9/17/19)
 	return(B.equil)
 }
 B.test=seq(-200,200, by =0.1)
@@ -137,9 +137,9 @@ P=final[k,2]
 H=final[k,3]
 B=final[k,4] #Getting the respective B, H, and B values to test if they come out to 0 when plugged in
 
-B.test[k]=B*(1-B)-a*B*H/(1+(f*P)/(1+s)) #db
-H.test[k]=a*(B)*(H)/(1+(f*P)/(1+s))-b*(H)*P/((1+(f*m*P)/(1+s))*(1+n*s))-dh*(H) #dh
-P.test[k]=b*H*P/((1+(f*m*P)/(1+s))*(1+n*s))-dp*P #dp
+B.test[k]=B*(1-B)-a*H*B/(1+f*m*P/(1+s)) #db Equation modified for fixed m (9/17/19)
+H.test[k]=a*B*H/(1+f*m*P/(1+s))-b*P*H/((1+f*P/(1+s))*(1+n*s))-dh*H #dh Equation modified for fixed m (9/17/19)
+P.test[k]=b*P*H/((1+f*P/(1+s))*(1+n*s))-dp*P#dp Equation modified for fixed m (9/17/19)
 }
 round(B.test,4)
 round(H.test,4) ##Round to get pretty 0 values
@@ -154,32 +154,34 @@ for(i in 1: nrow(final))
 	B=final[i,4] #Take your respective s,B,H, and P equil values... (I named the columns in final but used numbered columns here for notations. Inconsistent on my part)
 	H=final[i,3]
 	P=final[i,2]
-	
-# aa=a*H*(1+s)/(1+s+f*P)-2*B+1 #Bad derivation
-aa=-(a*H*(s + 1))/(f*P+s+1)-2*B+1
+
+###The following partial derivatives have all been modified to include swapped out 'm' values 9/1/19 except for the annotated version out one.
+###These have all been checked with wolfram alpha
+# aa=a*H*(1+s)/(1+s+f*P)-2*B+1 #Bad derivation: should have a (-)
+aa=-a*H*(1+s)/(1+s+f*m*P)-2*B+1
 
 # bb=a*B*(1+s)/(1+s+f*P) #Bad
- bb=-(a*B*(s+1))/(f*P+s+1)
+bb=-a*B*(1+s)/(1+s+f*m*P)
 
 # cc=a*f*B*H*(1+s)/(1+s+f*P)^2
- cc=(a*B*f*H*(s+1))/(f*P+s+1)^2
+cc=a*f*m*B*H*(1+s)/(1+s+f*m*P)^2
 
 # dd=a*H*(1+s)/(1+s+f*P)
-dd=(a*H*(s+1))/(f*P+s+1)
+dd=a*H*(1+s)/(1+s+f*m*P)
 
-# ee=a*B/(1+f*P/(1+s))-b*P/((1+f*m*P/(1+s))*(1+n*s))-dh
-ee=(a*B)/((f*P)/(s+1)+1)-(b*P)/((n*s+1)*((f*m*P)/(s+1)+1))-dh
+# ee=a*B/(1+f*P/(1+s))-b*P/((1+f*m*P/(1+s))*(1+n*s))-dh #I've checked and this equation and the one below are the same. I'm guessing past Gabriel used wolfram alpha to do the derivation as a way to double check (9/17/19)
+ee=a*B/(1+((f*m*P)/(1+s)))-b*P/((1+f*P/(1+s))*(1+n*s))-dh
 
-# ff=-a*f*B*H/((1+s)*(1+f*P/(1+s))^2)-b*H/((1+n*s)*(1+(f*m*P)/(1+s)))+b*f*m*H*P/((1+s)*(1+n*s)*(1+(f*m*P)/(1+s))^2)
-ff=-(a*B*f*H)/((s+1)*((f*P)/(s+1)+1)^2)-(b*H)/((n*s+1)*((f*m*P)/(s+1)+1))+(b*f*H*m*P)/((s+1)*(n*s+1)*((f*m*P)/(s+1)+1)^2)
+# ff=-a*f*B*H/((1+s)*(1+f*P/(1+s))^2)-b*H/((1+n*s)*(1+(f*m*P)/(1+s)))+b*f*m*H*P/((1+s)*(1+n*s)*(1+(f*m*P)/(1+s))^2) #I've checked and this equation and the one below are the same. I'm guessing past Gabriel used wolfram alpha to do the derivation as a way to double check (9/17/19)
+ff=-a*f*m*B*H/((1+s)*(1+f*m*P/(1+s))^2)-b*H/((1+n*s)*(1+(f*P)/(1+s)))+b*f*H*P/((1+s)*(1+n*s)*(1+(f*P)/(1+s))^2)
 
 gg=0
 
 # hh=b*P*(1+s)/((1+s+f*m*P)*(1+n*s))
-hh=(b*P*(s+1))/((n*s+1)*(f*m*P+s+1))
+hh=b*P*(1+s)/((1+s+f*P)*(1+n*s)) 
 
-# ii=b*H/((1+f*m*P/(1+s))*(1+n*s))-b*f*m*H*P/((1+s)*(1+n*s)*(1+f*m*P/(1+s))^2)-dp
-ii=(b*H)/((n*s+1)*((f*m*P)/(s+1)+1))-(b*f*H*m*P)/((s+1)*(n*s+1)*((f*m*P)/(s+1)+1)^2)-dp
+# ii=b*H/((1+f*m*P/(1+s))*(1+n*s))-b*f*m*H*P/((1+s)*(1+n*s)*(1+f*m*P/(1+s))^2)-dp #I've checked and this equation and the one below are the same. I'm guessing past Gabriel used wolfram alpha to do the derivation as a way to double check (9/17/19)
+ii=b*H/((1+f*P/(1+s))*(1+n*s))-b*f*H*P/((1+s)*(1+n*s)*(1+f*P/(1+s))^2)-dp
 
 jmat=(matrix(c(aa,bb,cc,dd,ee,ff,gg,hh,ii), ncol=3, byrow=T))
 
@@ -188,6 +190,15 @@ e.values=rbind(e.values, eigen(jmat)$values)  ##whole bunch of derivations and e
 e.values.fin=cbind(final$s,e.values)
 e.values.fin=as.data.frame(e.values.fin)
 e.values.fin #all values should have negative real parts here
+
+#9/17/19 Modifications. Here's the cool part, you can filter out the real part of complex numbers using the Re() function
+#Ideally, when you filter by real values greater than 0, none of them appear and you get numeric(0) suggesting that all of your equilibrai are stable
+head(e.values.fin)
+Re(e.values.fin$V2)[Re(e.values.fin$V2)>0]
+Re(e.values.fin$V3)[Re(e.values.fin$V3)>0]
+Re(e.values.fin$V4)[Re(e.values.fin$V4)>0]
+
+
 
 ####Part 2
 #####I want to test for when P is 0
