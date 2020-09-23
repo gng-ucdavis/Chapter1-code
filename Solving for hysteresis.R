@@ -5,7 +5,6 @@ library('rootSolve')
 ##To conduct a stability analysis, you need to first create a Jacobian matrix of your model. (This involves finding the partial derivative of your model equations with respect to the three populations)
 		##Next, input the numbers of your model into the Jacobian matrix. Some of the numbers in your model are parameters so those are constant, others 				require the population size of your different populations when a certain population is (at 0, not changing???)
 		###Then find the eigenvalues of your Jacobian matrix and see if it is positive, negative or 0
-##Annotating the crap out of this.
 #This here is to set your parameters for m and n
 low=1
 high=2
