@@ -40,7 +40,7 @@ s.domain=seq(from =0, to =0.3, by =0.001) #n=high
 # s.domain=seq(from =0, to =2000, by =1) #n=low
 for(i in 1: length(s.domain))
 {
-a=2.17 #Fixed parameter values for attack rates, birth rates,... Values are calculated from McCann and Yodzis 1994
+a=2.17 #Fixed parameter values for attack rates, birth rates
 b=0.1
 f=f.domain[j]#0.1, 10
 m=m.domain[low]#0.5 #5
