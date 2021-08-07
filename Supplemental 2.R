@@ -14,13 +14,13 @@ s.domain=seq(from =0, to =0.3, by =0.001) #n=high, pred more sensitive
 # s.domain=seq(from =0, to =2000, by =1) #n=low, prey more sensitive
 H.star=matrix(nrow=length(s.domain), ncol=4) #creating a blank matrix to fill in root solutions (assuming that you don't get more than 4 equil values)
 
-##The following forloop uses the uniroot.all function to find the the value of P such that the population growth rate of H is 0.
+##The following for loop uses the uniroot.all function to find the the value of P such that the population growth rate of H is 0.
 for(j in 1: length(s.domain))  
 {
 #Parameters
 a=2.17
 b=0.1
-n=n.domain[high] 
+n=n.domain[high]
 m=m.domain[low]
 f=1 
 s=s.domain[j]
@@ -34,7 +34,7 @@ PforH.equil=function(P)
 } 
 H.equil=PforH.equil(P.test) #We take P.test and run it through the function to see what kind of dh/dt values we get. We are identifying the predator numbers that cause H.equil (or dH/dt) to become 0.
 sol=uniroot.all(PforH.equil, c(0,30)) 
-# sol=max(uniroot.all(PforH.equil, c(0,30))) When both m and n are high, multiple solutions are found so this function allows us to test for the stability of those solutions, which turns out to be unstable
+# sol=max(uniroot.all(PforH.equil, c(0,30))) #When both m and n are high, multiple solutions are found so this function allows us to test for the stability of those solutions, which turns out to be unstable
 H.star[j,1:length(sol)]=sol 
 }
 

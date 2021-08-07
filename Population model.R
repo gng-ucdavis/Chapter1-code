@@ -1,5 +1,6 @@
 #####This script solves for a tri-trophic population model under varying sensory environment where both predator and prey have difficulty detecting each other
 # setwd('~/Dropbox/Projects/Sensory stress basal/Paper/Scripts for Yodzis and Innes/Images new style/Raw data for f=1')
+#Change log 1/19/21: m is swapped to be in the prey foraging rates to be consistent with the manuscript
 
 library('deSolve')
 
@@ -54,9 +55,9 @@ state=c(B=B[i]+0.01,H=H[i]+0.01,P=P[i]+0.01)
 #The Lorenz function encapsulates the model equations, which is a modified Lotka-Volterra predatory-prey model. Prey are able to respond to the presence of predators but at a cost of reduced foraging on the basal resource. Sensory stress (s) is introduced into the environment where as s increases, predation rate decreases but concurrently, prey dampen their response to the presence of predators. The overarching question of this model is to determine how do trophic cascades change when sensory stress is present
 Lorenz=function(t, state, parameters){
 	with(as.list(c(state,parameters)), {
-		dB=B*(1-B)-a*H*B/(1+f*P/(1+s))
-		dH=a*B*H/(1+f*P/(1+s))-b*P*H/((1+f*m*P/(1+s))*(1+n*s))-dh*H
-		dP=b*P*H/((1+f*m*P/(1+s))*(1+n*s))-dp*P
+		dB=B*(1-B)-a*H*B/(1+f*m*P/(1+s))
+		dH=a*B*H/(1+f*m*P/(1+s))-b*P*H/((1+f*P/(1+s))*(1+n*s))-dh*H
+		dP=b*P*H/((1+f*P/(1+s))*(1+n*s))-dp*P
 	
 		list(c(dB,dH,dP))
 	})
